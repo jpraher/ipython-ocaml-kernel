@@ -25,6 +25,7 @@ let handle_sigint _ =
 let () =
   begin
     signal sigint (Signal_handle handle_sigint);
+    kernel_start kernel;
     while not (kernel_has_shutdown kernel) do
       Unix.sleep 1
     done;

@@ -26,6 +26,6 @@ CAMLprim value get_raw_data( value unit )
 CAMLprim value wrap_new_kernel_with_connection_file(value num_threads,
                                                     value connection_file);
 CAMLprim value wrap_free_kernel(value kernel);
-
+CAMLprim value wrap_kernel_start(value kernel);
 CAMLprim value wrap_kernel_shutdown(value kernel);
 CAMLprim value wrap_kernel_has_shutdown(value kernel);

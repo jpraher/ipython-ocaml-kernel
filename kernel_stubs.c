@@ -40,6 +40,13 @@ value wrap_kernel_shutdown(value kernel) {
 }
 
 CAMLprim
+value wrap_kernel_start(value kernel) {
+    kernel_t * k = (kernel_t*)kernel;
+    kernel_start(k);
+    return Val_unit;
+}
+
+CAMLprim
 value wrap_kernel_has_shutdown(value kernel) {
     kernel_t * k = (kernel_t*)kernel;
     return Val_bool(kernel_has_shutdown(k));
