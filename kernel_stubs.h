@@ -29,3 +29,10 @@ CAMLprim value wrap_free_kernel(value kernel);
 CAMLprim value wrap_kernel_start(value kernel);
 CAMLprim value wrap_kernel_shutdown(value kernel);
 CAMLprim value wrap_kernel_has_shutdown(value kernel);
+
+CAMLprim value wrap_create_and_set_ipython_handlers(value kernel, value ctx);
+
+int wrap_handle_execute_request(void * ctx,
+                                const ipython_execute_request_t * request,
+                                ipython_execute_response_t      * response
+                                );
