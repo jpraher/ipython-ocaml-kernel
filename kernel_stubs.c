@@ -17,6 +17,7 @@ CAMLprim value get_raw_data( value unit )
 #include <caml/callback.h>
 #include <caml/memory.h>
 #include <assert.h>
+#include <string.h>
 
 CAMLprim
 value wrap_new_kernel_with_connection_file(value num_threads,
@@ -39,6 +40,15 @@ CAMLprim
 value wrap_kernel_shutdown(value kernel) {
     kernel_t * k = (kernel_t*)kernel;
     kernel_shutdown(k);
+    static value * handle_execute_request_f = NULL;
+    if (handle_execute_request_f == NULL) {
+        handle_execute_request_f = caml_named_value("handle_kernel_shutdown");
+        // assert(handle_execute_request_f != NULL);
+    }
+
+    if (handle_execute_request_f != NULL) {
+        caml_callback(*handle_execute_request_f, Val_unit);
+    }
     return Val_unit;
 }
 

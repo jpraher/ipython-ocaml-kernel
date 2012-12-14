@@ -24,24 +24,47 @@ external create_and_set_ipython_handlers : ip_kernel -> ctx_t -> unit = "wrap_cr
 type execute_request_t  = { code: string }
 type execute_response_t = { successful:bool; media_type: string; data: string }
 
+let is_shutdown = ref false
+
 let handle_execute_request ctx request =
   {successful=true;media_type="text/plain";data=request.code}
     
-let kernel = create_kernel 1 "/Users/jakob/.ipython/profile_default/security/kernel-7321.json"
+(* let kernel = create_kernel 1 "/Users/jakob/.ipython/profile_default/security/kernel-7321.json" *)
 
-let handle_sigint _ =
-  kernel_shutdown kernel
-  
-let () =
+let start_kernel num_threads conn_file execute_request_fn =
   begin
-    Callback.register "handle_execute_request" handle_execute_request;
-    create_and_set_ipython_handlers kernel ();
-    signal sigint (Signal_handle handle_sigint);
+    Callback.register "handle_execute_request" execute_request_fn;
+    let kernel = create_kernel num_threads conn_file in
+    let on_shutdown = (fun _ -> (free_kernel kernel); (is_shutdown := true)) in
+    signal sigint (Signal_handle 
+                     (fun _ -> (kernel_shutdown kernel)));
     kernel_start kernel;
-    while not (kernel_has_shutdown kernel) do
-      Unix.sleep 1
-    done;
-    free_kernel kernel
+    Callback.register "handle_kernel_shutdown" on_shutdown;
+    (fun _ -> (!is_shutdown))
   end
 
     
+let init_ipython_kernel argv =
+  let conn_file = ref "" in
+  (* parse options *)
+  let rec get_options xs =
+    match xs with
+        [] -> ()
+      | "-f" :: file :: xs' -> conn_file := file; get_options xs'
+      | _ :: xs' -> get_options xs'
+  in
+  get_options argv;
+  start_kernel 1 (!conn_file)
+
+(* 
+   main entry 
+ *)
+    
+let () =
+  let test_shutdown = (init_ipython_kernel (Array.to_list Sys.argv) handle_execute_request) in
+  while not (test_shutdown()) do
+    Unix.sleep 1
+  done;
+    
+
+
