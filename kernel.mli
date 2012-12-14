@@ -16,5 +16,5 @@ type execute_response_t = {
 }
 val is_shutdown : bool ref
 val handle_execute_request : 'a -> execute_request_t -> execute_response_t
-val start_kernel : int -> string -> 'a -> 'b -> bool
-val init_ipython_kernel : string list -> 'a -> 'b -> bool
+val start_kernel : int -> string -> ctx_t -> 'a -> 'b -> bool
+val init_ipython_kernel : string list -> ctx_t -> 'a -> 'b -> bool

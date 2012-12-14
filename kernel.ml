@@ -31,13 +31,14 @@ let handle_execute_request ctx request =
     
 (* let kernel = create_kernel 1 "/Users/jakob/.ipython/profile_default/security/kernel-7321.json" *)
 
-let start_kernel num_threads conn_file execute_request_fn =
+let start_kernel num_threads conn_file ctx execute_request_fn =
   begin
     Callback.register "handle_execute_request" execute_request_fn;
     let kernel = create_kernel num_threads conn_file in
     let on_shutdown = (fun _ -> (free_kernel kernel); (is_shutdown := true)) in
     signal sigint (Signal_handle 
                      (fun _ -> (kernel_shutdown kernel)));
+    create_and_set_ipython_handlers kernel ctx ;
     kernel_start kernel;
     Callback.register "handle_kernel_shutdown" on_shutdown;
     (fun _ -> (!is_shutdown))
@@ -61,7 +62,7 @@ let init_ipython_kernel argv =
  *)
     
 let () =
-  let test_shutdown = (init_ipython_kernel (Array.to_list Sys.argv) handle_execute_request) in
+  let test_shutdown = (init_ipython_kernel (Array.to_list Sys.argv) () handle_execute_request) in
   while not (test_shutdown()) do
     Unix.sleep 1
   done;

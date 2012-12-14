@@ -112,6 +112,6 @@ value wrap_create_and_set_ipython_handlers(value kernel, value ctx) {
     table.context = (void*) ctx;
     table.generic = NULL;
     table.execute_request = &wrap_handle_execute_request;
-ipython_shell_handler_set_handlers(s, &table);
+    ipython_shell_handler_set_handlers(s, &table);
     return Val_unit;
 }
