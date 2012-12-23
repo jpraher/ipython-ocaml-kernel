@@ -31,7 +31,14 @@ let handle_execute_request ctx request =
     
 (* let kernel = create_kernel 1 "/Users/jakob/.ipython/profile_default/security/kernel-7321.json" *)
 
-let start_kernel num_threads conn_file ctx execute_request_fn =
+module type HandlerType = sig
+  type ctx_t
+  val execute_request : ctx_t -> execute_request_t -> execute_response_t
+end
+
+module IPython = functor(Handler: HandlerType) ->
+struct
+  let start_kernel num_threads conn_file ctx execute_request_fn =
   begin
     Callback.register "handle_execute_request" execute_request_fn;
     let kernel = create_kernel num_threads conn_file in
@@ -44,25 +51,23 @@ let start_kernel num_threads conn_file ctx execute_request_fn =
     (fun _ -> (!is_shutdown))
   end
 
-    
-let init_ipython_kernel argv =
-  let conn_file = ref "" in
-  (* parse options *)
-  let rec get_options xs =
-    match xs with
-        [] -> ()
-      | "-f" :: file :: xs' -> conn_file := file; get_options xs'
-      | _ :: xs' -> get_options xs'
-  in
-  get_options argv;
-  start_kernel 1 (!conn_file)
+  let init_kernel argv =
+    let conn_file = ref "" in
+    (* parse options *)
+    let rec get_options xs =
+      match xs with
+          [] -> ()
+        | "-f" :: file :: xs' -> conn_file := file; get_options xs'
+        | _ :: xs' -> get_options xs'
+    in
+    get_options argv;
+    start_kernel 1 (!conn_file)
 
-(* 
-   main entry 
- *)
-    
-let () =
-  let test_shutdown = (init_ipython_kernel (Array.to_list Sys.argv) () handle_execute_request) in
+end
+
+
+let wait_for_shutdown test_shutdown  =
+ (* let test_shutdown = (init_ipython_kernel (Array.to_list Sys.argv) () handle_execute_request) *)
   while not (test_shutdown()) do
     Unix.sleep 1
   done;

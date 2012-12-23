@@ -16,5 +16,15 @@ type execute_response_t = {
 }
 val is_shutdown : bool ref
 val handle_execute_request : 'a -> execute_request_t -> execute_response_t
-val start_kernel : int -> string -> ctx_t -> 'a -> 'b -> bool
-val init_ipython_kernel : string list -> ctx_t -> 'a -> 'b -> bool
+module type HandlerType =
+  sig
+    type ctx_t
+    val execute_request : ctx_t -> execute_request_t -> execute_response_t
+  end
+module IPython :
+  functor (Handler : HandlerType) ->
+    sig
+      val start_kernel : int -> string -> ctx_t -> 'a -> 'b -> bool
+      val init_kernel : string list -> ctx_t -> 'a -> 'b -> bool
+    end
+val wait_for_shutdown : (unit -> bool) -> unit
