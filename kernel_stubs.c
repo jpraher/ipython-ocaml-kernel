@@ -91,15 +91,45 @@ int wrap_handle_execute_request(void * ctx,
                                   request
                                  );
 
-    resp_successful  = Field(response, 0);
-    resp_media_type  = Field(response, 1);
-    resp_data        = Field(response, 2);
 
-    ext_response->successful = Int_val(resp_successful);
-    ext_response->media_type = strdup(String_val(resp_media_type));
-    ext_response->data       = strdup(String_val(resp_data));
+    // assert is-block
+    if (Is_block(response)) {
+        switch(Tag_val(response)) {
+        case 0: // Success
+            {
+                resp_media_type  = Field(response, 0);
+                resp_data        = Field(response, 1);
 
-    return 1;
+                ext_response->status = StatusOk;
+                ext_response->media_type = strdup(String_val(resp_media_type));
+                ext_response->data       = strdup(String_val(resp_data));
+
+                return 1;
+            }
+            break;
+        case 1: // Error
+            {
+                value resp_ename  = Field(response, 0);
+                value resp_evalue = Field(response, 1);
+                value resp_backtrace = Field(response, 2);
+
+                ext_response->status = StatusError;
+                ext_response->exception_name  = strdup(String_val(resp_ename));
+                ext_response->exception_value = strdup(String_val(resp_evalue));
+                // TODO add
+                ext_response->traceback = NULL;
+                ext_response->traceback_len = 0;
+                return 1;
+            }
+            break;
+        }
+    }
+
+    ext_response->status = StatusError;
+    ext_response->exception_name  = strdup("OCamlIPythonError");
+    ext_response->exception_value = strdup("Failed to unmarshal response");
+
+    return 0;
 }
 
 

@@ -8,12 +8,10 @@ external kernel_shutdown : ip_kernel -> unit = "wrap_kernel_shutdown"
 external kernel_has_shutdown : ip_kernel -> bool = "wrap_kernel_has_shutdown"
 external create_and_set_ipython_handlers : ip_kernel -> ctx_t -> unit
   = "wrap_create_and_set_ipython_handlers"
+type execute_response_t =
+    Success of string * string
+  | Error of string * string * string list
 type execute_request_t = { code : string; }
-type execute_response_t = {
-  successful : bool;
-  media_type : string;
-  data : string;
-}
 val is_shutdown : bool ref
 val handle_execute_request : 'a -> execute_request_t -> execute_response_t
 module type HandlerType =
