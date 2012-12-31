@@ -2,6 +2,7 @@ type ip_kernel
 type ctx_t = unit
 external create_kernel : int -> string -> ip_kernel
   = "wrap_new_kernel_with_connection_file"
+external env_init : string -> unit = "wrap_kernel_env_init"
 external free_kernel : ip_kernel -> unit = "wrap_free_kernel"
 external kernel_start : ip_kernel -> unit = "wrap_kernel_start"
 external kernel_shutdown : ip_kernel -> unit = "wrap_kernel_shutdown"

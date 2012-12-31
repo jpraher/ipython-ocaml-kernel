@@ -20,6 +20,14 @@ CAMLprim value get_raw_data( value unit )
 #include <string.h>
 
 CAMLprim
+value wrap_kernel_env_init(value app_name)
+{
+    const char * app_name_ = String_val(app_name);
+    kernel_env_init(app_name_);
+    return Val_unit;
+}
+
+CAMLprim
 value wrap_new_kernel_with_connection_file(value num_threads,
                                            value connection_file)
 {
@@ -144,4 +152,36 @@ value wrap_create_and_set_ipython_handlers(value kernel, value ctx) {
     table.execute_request = &wrap_handle_execute_request;
     ipython_shell_handler_set_handlers(s, &table);
     return Val_unit;
+}
+
+CAMLprim value wrap_new_ioredir_stdout(value unit)
+{
+    ioredir_t * r = new_ioredir_stdout();
+    return (value)r;
+}
+
+CAMLprim value wrap_new_ioredir(value fileno)
+{
+    ioredir_t * r = new_ioredir(Int_val(fileno));
+    return (value)r;
+}
+
+CAMLprim value wrap_free_ioredir(value k)
+{
+    free_ioredir((ioredir_t*)k);
+    return Val_unit;
+
+}
+CAMLprim value wrap_ioredir_receive(value k)
+{
+    CAMLlocal1(ml_s);
+    char * p  = NULL; // p will be a null-terminated string
+    int l = 0;
+    if (ioredir_receive((ioredir_t*)k, &p ,&l) && l >= 0) {
+        ml_s = caml_copy_string(p);
+        free(p);
+        return ml_s;
+    }
+    ml_s = caml_copy_string("");
+    return ml_s;
 }

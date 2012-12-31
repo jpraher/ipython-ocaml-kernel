@@ -22,9 +22,13 @@ CAMLprim value get_raw_data( value unit )
 #include <caml/mlvalues.h>
 #include <caml/alloc.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 CAMLprim value wrap_new_kernel_with_connection_file(value num_threads,
                                                     value connection_file);
+CAMLprim value wrap_kernel_env_init(value app_name);
 CAMLprim value wrap_free_kernel(value kernel);
 CAMLprim value wrap_kernel_start(value kernel);
 CAMLprim value wrap_kernel_shutdown(value kernel);
@@ -36,3 +40,12 @@ int wrap_handle_execute_request(void * ctx,
                                 const ipython_execute_request_t * request,
                                 ipython_execute_response_t      * response
                                 );
+
+CAMLprim value wrap_new_ioredir_stdout(value unit);
+CAMLprim value wrap_new_ioredir(value fileno);
+CAMLprim value wrap_free_ioredir(value k);
+CAMLprim value wrap_ioredir_receive(value k);
+
+#ifdef __cplusplus
+}
+#endif
