@@ -1,5 +1,5 @@
 
-KERNEL_SRC=/Users/jakob/src/projects/ipython-xlang-kernel/src
+KERNEL_SRC=$(shell cd ../ipython-xlang-kernel; pwd)
 KERNEL_LIB=${KERNEL_SRC}
 KERNEL_INCLUDE=${KERNEL_SRC}
 OCAML_INCLUDE=/opt/local/lib/ocaml
