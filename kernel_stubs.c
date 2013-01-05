@@ -92,7 +92,7 @@ int wrap_handle_execute_request(void * ctx,
     value request, response, resp_successful, resp_media_type, resp_data;
 
     request = caml_alloc(1, 0);
-    Store_field(request, 0, caml_copy_string(ext_request->code));
+    Store_field(request, 0, caml_copy_string(ext_request->content_json_string));
 
     response = caml_callback2(*handle_execute_request_f,
                                   (value)ctx,

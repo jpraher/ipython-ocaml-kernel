@@ -8,9 +8,9 @@
 
 open Sys
 open Unix
+open Yojson.Basic
 
 type ip_kernel 
-type ctx_t = unit
   
 external create_kernel    : int -> string -> ip_kernel = "wrap_new_kernel_with_connection_file"
 external env_init  : string -> unit = "wrap_kernel_env_init"
@@ -18,7 +18,6 @@ external free_kernel      : ip_kernel -> unit = "wrap_free_kernel"
 external kernel_start     : ip_kernel -> unit = "wrap_kernel_start"
 external kernel_shutdown  : ip_kernel -> unit = "wrap_kernel_shutdown"
 external kernel_has_shutdown : ip_kernel -> bool = "wrap_kernel_has_shutdown"
-external create_and_set_ipython_handlers : ip_kernel -> ctx_t -> unit = "wrap_create_and_set_ipython_handlers"
 
 
 type execute_response_t =
@@ -27,13 +26,21 @@ type execute_response_t =
     
 (* type context_t *)
 (* version of format *)
-type execute_request_t  = { code: string }
+type native_execute_request_t  = { content_string: string }
+type execute_request_t = { content: json }
 (* type execute_response_t = { successful:bool; media_type: string; data: string } *)
 
 let is_shutdown = ref false
 
 let handle_execute_request ctx request =
-  Success ("text/plain", request.code)
+  match request with 
+      `Assoc obj ->  
+        match List.assoc "code" obj with 
+            `String code -> Success ("text/plain", code )
+(*
+  let `Assoc obj = request.content in  
+  let `String code = List.assoc "code" obj in
+*)
     
 (* let kernel = create_kernel 1 "/Users/jakob/.ipython/profile_default/security/kernel-7321.json" *)
 
@@ -44,9 +51,11 @@ end
 
 module IPython = functor(Handler: HandlerType) ->
 struct
+  external create_and_set_ipython_handlers : ip_kernel -> Handler.ctx_t -> unit = "wrap_create_and_set_ipython_handlers"
+
   let start_kernel num_threads conn_file ctx execute_request_fn =
   begin
-    Callback.register "handle_execute_request" execute_request_fn;
+    Callback.register "handle_execute_request" (fun ctx {content_string = text}  -> execute_request_fn ctx {content = (from_string text) });
     let kernel = create_kernel num_threads conn_file in
     let on_shutdown = (fun _ -> (free_kernel kernel); (is_shutdown := true)) in
     signal sigint (Signal_handle 

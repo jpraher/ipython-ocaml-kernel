@@ -6,13 +6,13 @@ OCAML_INCLUDE=/opt/local/lib/ocaml
 
 .PHONY: all clean
 
-all: kernel.opt
+all: kernel.cmi kernel.cmxa
 
 kernel.mli: kernel.ml
-	ocamlc -i kernel.ml > kernel.mli
+	ocamlfind ocamlc -package yojson -i kernel.ml > kernel.mli
 
 kernel.cmi: kernel.mli
-	ocamlc  kernel.mli
+	ocamlfind ocamlc -package yojson kernel.mli
 
 # kernel_stubs.o: kernel_stubs.c
 #	$(CC) -c -L${KERNEL_LIB} -I${KERNEL_INCLUDE} -I${OCAML_INCLUDE}  kernel_stubs.c
@@ -31,7 +31,7 @@ kernel.cmi: kernel.mli
 LIBEXT=.so
 
 %.cmx: %.ml
-	ocamlopt -c $<
+	ocamlfind ocamlopt -verbose -package yojson -c $<
 
 kernel_stubs.o: kernel_stubs.c
 	ocamlc -ccopt -I${KERNEL_INCLUDE} $<
@@ -39,8 +39,8 @@ kernel_stubs.o: kernel_stubs.c
 dll_kernel_stubs.$(LIBEXT): kernel_stubs.o
 	ocamlmklib -o _kernel_stubs $<  -L${KERNEL_LIB} -lipython-xlang-kernel
 
-kernel.cmxa: kernel.cmx dll_kernel_stubs.$(LIBEXT)
-	ocamlopt -a -o $@ $< -cclib -l_kernel_stubs -cclib -L${KERNEL_LIB} -cclib -lipython-xlang-kernel
+kernel.cmxa: kernel.cmx dll_kernel_stubs.$(LIBEXT) kernel.cmi
+	ocamlfind ocamlopt -verbose -package yojson -a -o $@ $< -cclib -l_kernel_stubs -cclib -L${KERNEL_LIB} -cclib -lipython-xlang-kernel
 
 # kernel.cmxa: kernel.cmx kernel_stubs.o
 #	ocamlmklib -o kernel kernel.cmx kernel_stubs.o -lipython-xlang-kernel -L${KERNEL_LIB}
