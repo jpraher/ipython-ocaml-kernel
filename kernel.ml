@@ -11,7 +11,7 @@ open Unix
 open Yojson.Basic
 
 type ip_kernel 
-  
+
 external create_kernel    : int -> string -> ip_kernel = "wrap_new_kernel_with_connection_file"
 external env_init  : string -> unit = "wrap_kernel_env_init"
 external free      : ip_kernel -> unit = "wrap_free_kernel"
@@ -43,27 +43,33 @@ let handle_execute_request ctx request =
     
 (* let kernel = create_kernel 1 "/Users/jakob/.ipython/profile_default/security/kernel-7321.json" *)
 
+type ip_shell
+external shell_raw_input : ip_shell -> string -> string = "wrap_ipython_raw_input"
+
 module type HandlerType = sig
   type ctx_t
-  val execute_request : ctx_t -> execute_request_t -> execute_response_t
+  val execute_request : ip_shell -> ctx_t -> execute_request_t -> execute_response_t
 end
 
 module IPython = functor(Handler: HandlerType) ->
 struct
-  external create_and_set_ipython_handlers : ip_kernel -> Handler.ctx_t -> unit = "wrap_create_and_set_ipython_handlers"
+
+  external create_and_set_ipython_handlers : ip_kernel -> Handler.ctx_t -> ip_shell  = "wrap_create_and_set_ipython_handlers"
+    
+
 
   let start_kernel num_threads conn_file ctx execute_request_fn =
-  begin
-    Callback.register "handle_execute_request" (fun ctx {content_string = text}  -> execute_request_fn ctx {content = (from_string text) });
     let kernel = create_kernel num_threads conn_file in
-    begin
-      let shutdown_fn = fun _ -> shutdown kernel in
-      signal sigint (Signal_handle  shutdown_fn);
-      create_and_set_ipython_handlers kernel ctx ;
-      start kernel;
-      kernel
-    end
-  end
+    let _  = Callback.register "handle_execute_request" 
+      (fun shell ctx {content_string = text}  -> 
+        execute_request_fn shell ctx {content = (from_string text) })  
+    in
+    let shell = create_and_set_ipython_handlers kernel ctx in 
+    let shutdown_fn = fun _ -> shutdown kernel in
+    let _ = signal sigint (Signal_handle  shutdown_fn) in
+    let _ = start kernel in
+    kernel
+      
 
   let init_kernel argv =
     let conn_file = ref "" in

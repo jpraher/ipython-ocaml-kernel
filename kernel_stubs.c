@@ -49,14 +49,6 @@ value wrap_kernel_shutdown(value kernel) {
     kernel_t * k = (kernel_t*)kernel;
     kernel_shutdown(k);
     static value * handle_execute_request_f = NULL;
-    /* if (handle_execute_request_f == NULL) {
-        handle_execute_request_f = caml_named_value("handle_kernel_shutdown");
-        // assert(handle_execute_request_f != NULL);
-    }
-
-    if (handle_execute_request_f != NULL) {
-        caml_callback(*handle_execute_request_f, Val_unit);
-        }*/
     return Val_unit;
 }
 
@@ -76,7 +68,8 @@ value wrap_kernel_has_shutdown(value kernel) {
 /*
   handle callback
  */
-int wrap_handle_execute_request(void * ctx,
+int wrap_handle_execute_request(shell_handler_t * s,
+                                void * ctx,
                                 const ipython_execute_request_t * ext_request,
                                 ipython_execute_response_t      * ext_response
                                 )
@@ -94,10 +87,11 @@ int wrap_handle_execute_request(void * ctx,
     request = caml_alloc(1, 0);
     Store_field(request, 0, caml_copy_string(ext_request->content_json_string));
 
-    response = caml_callback2(*handle_execute_request_f,
-                                  (value)ctx,
-                                  request
-                                 );
+    response = caml_callback3(*handle_execute_request_f,
+                              (value)s,
+                              (value)ctx,
+                              request
+                              );
 
 
     // assert is-block
@@ -151,8 +145,31 @@ value wrap_create_and_set_ipython_handlers(value kernel, value ctx) {
     table.generic = NULL;
     table.execute_request = &wrap_handle_execute_request;
     ipython_shell_handler_set_handlers(s, &table);
-    return Val_unit;
+    return (value)s;
 }
+
+CAMLprim
+value wrap_ipython_raw_input(value shell, value prompt) {
+
+    CAMLlocal1(ml_s);
+
+    shell_handler_t * s = (shell_handler_t*)shell;
+    char * data = NULL;
+    int len;
+
+    if (!ipython_raw_input(shell,String_val(prompt), &data, &len)) {
+        // raise error...
+    }
+
+    if (data) {
+        ml_s = caml_copy_string(data);
+        free(data);
+        return ml_s;
+    }
+
+    return (value)s;
+}
+
 
 CAMLprim value wrap_new_ioredir_stdout(value unit)
 {

@@ -14,23 +14,27 @@ type execute_request_t = { content : Yojson.Basic.json; }
 val handle_execute_request :
   'a ->
   [< `Assoc of (string * [< `String of string ]) list ] -> execute_response_t
+type ip_shell
+external shell_raw_input : ip_shell -> string -> string
+  = "wrap_ipython_raw_input"
 module type HandlerType =
   sig
     type ctx_t
-    val execute_request : ctx_t -> execute_request_t -> execute_response_t
+    val execute_request :
+      ip_shell -> ctx_t -> execute_request_t -> execute_response_t
   end
 module IPython :
   functor (Handler : HandlerType) ->
     sig
       external create_and_set_ipython_handlers :
-        ip_kernel -> Handler.ctx_t -> unit
+        ip_kernel -> Handler.ctx_t -> ip_shell
         = "wrap_create_and_set_ipython_handlers"
       val start_kernel :
         int ->
         string ->
-        Handler.ctx_t -> ('a -> execute_request_t -> 'b) -> ip_kernel
+        Handler.ctx_t -> ('a -> 'b -> execute_request_t -> 'c) -> ip_kernel
       val init_kernel :
         string list ->
-        Handler.ctx_t -> ('a -> execute_request_t -> 'b) -> ip_kernel
+        Handler.ctx_t -> ('a -> 'b -> execute_request_t -> 'c) -> ip_kernel
     end
 val wait_for_shutdown : ip_kernel -> unit
